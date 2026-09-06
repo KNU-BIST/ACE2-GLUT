@@ -211,14 +211,18 @@ hits_255 <- Filter(
   hits_255_all
 )
 
+# This table reports annotation-level KEGG membership of the predefined
+# genes-of-interest list. Membership does not imply that every listed gene
+# was retained in the filtered GSE255075 expression matrix.
+
 hit_tbl_255 <- data.frame(
   pathway = names(hits_255),
-  n_genes_present = vapply(
+  n_GOI_in_pathway = vapply(
     hits_255,
     length,
     integer(1)
   ),
-  genes_present = vapply(
+  GOI_in_pathway = vapply(
     hits_255,
     function(x) {
       paste(
@@ -230,7 +234,7 @@ hit_tbl_255 <- data.frame(
   )
 ) |>
   dplyr::arrange(
-    dplyr::desc(n_genes_present),
+    dplyr::desc(n_GOI_in_pathway),
     pathway
   )
 
