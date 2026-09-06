@@ -91,7 +91,8 @@ Participant-level clinical and placental protein data are not included in this p
 
 - DESeq2
 - design: `~ condition`
-- low-expression filter: total count >= 10 across samples
+- GSE255075 low-expression filter: total count >= 10 across samples
+- GSE249311 historical low-expression filter: total count > 10 across samples
 - Benjamini–Hochberg multiple-testing correction
 - VST values are used for visualization/correlation, not for DE inference
 
@@ -113,7 +114,8 @@ RAS–SLC2 correlation heatmaps retain nominal Pearson P-value symbols for conti
 ### Institutional placental cohort
 
 The biological unit is **one placenta per pregnancy**. Technical replicates are not treated as independent biological observations.
-
+The GSE249311 ACE2–SLC2A9 association is nominal (Pearson r = 0.405,two-sided P = 0.026) and does not survive BH correction across the tested
+RAS–SLC2 correlations (adjusted P = 0.140).
 ## Package requirements
 
 Core packages include:

@@ -8,6 +8,10 @@
 # Placental ACE2 and glucose transporter expression in gestational diabetes
 # mellitus
 #
+# Author
+# ------
+# Md. Masudul Haque
+#
 # Purpose
 # -------
 # Compare GLUT–RAS Pearson-correlation estimates from GSE255075 and GSE249311

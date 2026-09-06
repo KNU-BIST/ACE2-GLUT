@@ -8,6 +8,10 @@
 # Placental ACE2 and glucose transporter expression in gestational diabetes
 # mellitus
 #
+# Author
+# ------
+# Md. Masudul Haque
+#
 # Purpose
 # -------
 # Use the persisted GSE249311 DESeq2/VST objects to examine RAS–GLUT
@@ -27,8 +31,12 @@
 # P values to reproduce the manuscript analysis. BH-adjusted values are also
 # exported and should be used when assessing multiplicity.
 #
-# Group comparisons for SLC2 genes are taken from DESeq2 Wald-test contrasts;
-# they are not t tests performed on VST values.
+# Historical SLC2 group comparisons are reproduced using two-sided Welch
+# t-tests on VST-normalized expression, with BH correction jointly across
+# the 12 SLC2 comparisons.
+#
+# DESeq2 Wald-test contrasts are exported separately as transcriptome-level
+# differential-expression inference.
 #
 # Inputs
 # ------
@@ -38,9 +46,15 @@
 #
 # Outputs
 # -------
-# outputs/tables/GSE249311/GLUT_RAS_correlations.csv
-# outputs/tables/GSE249311/GLUT_DESeq2_contrasts.csv
-# outputs/tables/GSE249311/ACE2_DESeq2_contrasts.csv
+# outputs/tables/GSE249311/
+#   GLUT_RAS_correlations.csv
+#   GLUT_VST_expression_long.csv
+#   GLUT_VST_Welch_ttests.csv
+#   GLUT_DESeq2_contrasts.csv
+#   ACE2_DESeq2_contrasts.csv
+#   ACE2_SLC2A9_correlation.csv
+#   KEGG_GDMA2_vs_Control.csv
+#
 # figures/exploratory/GSE249311/
 # =============================================================================
 
@@ -508,7 +522,117 @@ plot_list_249 <- lapply(
 names(plot_list_249) <- glut_present_249
 
 # -----------------------------------------------------------------------------
-# 4. SLC2 DESeq2 Wald-test contrasts
+# 4. Historical GLUT VST Welch tests
+# -----------------------------------------------------------------------------
+#
+# These tests reproduce the historical exploratory analysis performed on
+# VST-normalized expression values.
+#
+# Three comparisons are made for each of four SLC2 genes:
+#   GDMA1 vs Control
+#   GDMA2 vs Control
+#   T2DM  vs Control
+#
+# BH correction is applied jointly across all 12 comparisons.
+#
+# These exploratory tests are retained for historical reproducibility.
+# DESeq2 Wald-test contrasts are reported separately below.
+
+glut_vst_welch_results_249 <- dplyr::bind_rows(
+  lapply(
+    glut_present_249,
+    function(gene_name) {
+
+      gene_df <- glut_long_249 |>
+        dplyr::filter(
+          Gene == gene_name
+        )
+
+      comparisons <- list(
+        c("Control", "GDMA1"),
+        c("Control", "GDMA2"),
+        c("Control", "T2DM")
+      )
+
+      dplyr::bind_rows(
+        lapply(
+          comparisons,
+          function(comp) {
+
+            sub_df <- gene_df |>
+              dplyr::filter(
+                Condition %in% comp
+              )
+
+            tt <- stats::t.test(
+              VST_expression ~ Condition,
+              data = sub_df,
+              var.equal = FALSE
+            )
+
+            means <- tapply(
+              sub_df$VST_expression,
+              sub_df$Condition,
+              mean
+            )
+
+            data.frame(
+              Gene = gene_name,
+              Comparison = paste(
+                comp[2],
+                "vs",
+                comp[1]
+              ),
+              n_Control = sum(
+                sub_df$Condition == comp[1]
+              ),
+              n_Comparison = sum(
+                sub_df$Condition == comp[2]
+              ),
+              mean_Control = unname(
+                means[comp[1]]
+              ),
+              mean_Comparison = unname(
+                means[comp[2]]
+              ),
+              difference_Comparison_minus_Control =
+                unname(means[comp[2]] - means[comp[1]]),
+              p_raw = tt$p.value,
+              stringsAsFactors = FALSE
+            )
+          }
+        )
+      )
+    }
+  )
+)
+
+glut_vst_welch_results_249$p_BH <- p.adjust(
+  glut_vst_welch_results_249$p_raw,
+  method = "BH"
+)
+
+write.csv(
+  glut_vst_welch_results_249,
+  file.path(
+    path_tables_249,
+    "GLUT_VST_Welch_ttests.csv"
+  ),
+  row.names = FALSE
+)
+
+message(
+  "Historical VST Welch tests with BH <0.05: ",
+  sum(
+    glut_vst_welch_results_249$p_BH < 0.05,
+    na.rm = TRUE
+  ),
+  " / ",
+  nrow(glut_vst_welch_results_249)
+)
+
+# -----------------------------------------------------------------------------
+# 5. SLC2 DESeq2 Wald-test contrasts
 # -----------------------------------------------------------------------------
 
 deseq2_contrasts <- list(
@@ -537,7 +661,7 @@ extract_gene_contrast <- function(
   result <- DESeq2::results(
     dds_249,
     contrast = contrast_vector,
-    alpha = 0.05
+    alpha = 0.1
   )
 
   result_df <- as.data.frame(result) |>
@@ -663,6 +787,65 @@ if ("ACE2" %in% rownames(expr_mat_249)) {
       "ACE2_DESeq2_contrasts.csv"
     ),
     row.names = FALSE
+  )
+}
+
+# Explicit manuscript-relevant ACE2-SLC2A9 correlation
+
+if (
+  all(
+    c("ACE2", "SLC2A9") %in%
+    rownames(expr_mat_249)
+  )
+) {
+
+  ace2_slc2a9_249 <- stats::cor.test(
+    as.numeric(
+      expr_mat_249["ACE2", ]
+    ),
+    as.numeric(
+      expr_mat_249["SLC2A9", ]
+    ),
+    method = "pearson"
+  )
+
+  ace2_slc2a9_table_249 <- data.frame(
+    Gene1 = "ACE2",
+    Gene2 = "SLC2A9",
+    n = length(
+      expr_mat_249["ACE2", ]
+    ),
+    Pearson_r = unname(
+      ace2_slc2a9_249$estimate
+    ),
+    p_two_sided = ace2_slc2a9_249$p.value,
+    CI_lower = ace2_slc2a9_249$conf.int[1],
+    CI_upper = ace2_slc2a9_249$conf.int[2]
+  )
+
+  write.csv(
+    ace2_slc2a9_table_249,
+    file.path(
+      path_tables_249,
+      "ACE2_SLC2A9_correlation.csv"
+    ),
+    row.names = FALSE
+  )
+
+  message(
+    sprintf(
+      paste0(
+        "ACE2-SLC2A9: r = %.4f, ",
+        "two-sided P = %.4f, n = %d"
+      ),
+      unname(
+        ace2_slc2a9_249$estimate
+      ),
+      ace2_slc2a9_249$p.value,
+      length(
+        expr_mat_249["ACE2", ]
+      )
+    )
   )
 }
 

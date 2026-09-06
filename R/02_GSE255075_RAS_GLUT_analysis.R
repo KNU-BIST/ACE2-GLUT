@@ -8,6 +8,10 @@
 # Placental ACE2 and glucose transporter expression in gestational diabetes
 # mellitus
 #
+# Author
+# ------
+# Md. Masudul Haque
+#
 # Purpose
 # -------
 # Perform hypothesis-driven analysis of placental GLUT/SLC2 and

@@ -8,6 +8,10 @@
 # Placental ACE2 and glucose transporter expression in gestational diabetes
 # mellitus
 #
+# Author
+# ------
+# Md. Masudul Haque
+#
 # Purpose
 # -------
 # Generate patient-level ACE2–GLUT1 and ACE2–GLUT3 protein correlation plots

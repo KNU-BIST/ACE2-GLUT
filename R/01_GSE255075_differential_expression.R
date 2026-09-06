@@ -8,6 +8,10 @@
 # Placental ACE2 and glucose transporter expression in gestational diabetes
 # mellitus
 #
+# Author
+# ------
+# Md. Masudul Haque
+#
 # Purpose
 # -------
 # Reconstruct and analyze the GSE255075 placental RNA-seq dataset comparing
@@ -309,18 +313,10 @@ save_plot(
 )
 
 # -----------------------------------------------------------------------------
-# 6. Volcano plots
+# 6. Volcano plot
 # -----------------------------------------------------------------------------
 
-png(
-  file.path(path_fig_255, "GSE255075_volcano_GOI.png"),
-  width = 8,
-  height = 6.5,
-  units = "in",
-  res = dpi_out
-)
-
-EnhancedVolcano::EnhancedVolcano(
+p_volcano_255 <- EnhancedVolcano::EnhancedVolcano(
   res_df_255,
   lab = res_df_255$gene,
   x = "log2FoldChange",
@@ -332,13 +328,85 @@ EnhancedVolcano::EnhancedVolcano(
   pCutoff = 0.05,
   FCcutoff = 1,
   xlim = c(-5, 5),
+  ylim = c(-1, 30),
   pointSize = 2.0,
   labSize = 3.5,
   title = "GDM vs Normal — GSE255075"
 )
 
-dev.off()
+ggplot2::ggsave(
+  filename = file.path(
+    path_fig_255,
+    "GSE255075_volcano_GOI.png"
+  ),
+  plot = p_volcano_255,
+  width = 8,
+  height = 6.5,
+  units = "in",
+  dpi = dpi_out,
+  bg = "white"
+)
 
-write_session_info("01_GSE255075_differential_expression.R")
+# -----------------------------------------------------------------------------
+# 6B. Manuscript-style full volcano plot
+# -----------------------------------------------------------------------------
+#
+# Reproduces the historical Figure 1B configuration.
+# Uses the unshrunk DESeq2 result for the global transcriptomic volcano.
+# Differential-expression inference remains BH-adjusted DESeq2 inference.
+#
+# Historical plot settings:
+#   x = unshrunk DESeq2 log2 fold change
+#   y = adjusted P value (padj)
+#   FC cutoff = 1
+#   adjusted-P cutoff = 1e-5
+#   x range = -5 to 5
+#   y range = 0 to 30
+#
 
-message("\nPhase 1 complete.\n")
+p_volcano_manuscript_255 <- EnhancedVolcano::EnhancedVolcano(
+  res_255,
+  lab = rownames(res_255),
+  x = "log2FoldChange",
+  y = "padj",
+
+  pCutoff = 1e-5,
+  FCcutoff = 1,
+
+  xlim = c(-5, 5),
+  ylim = c(0, 30),
+
+  border = "full",
+  borderWidth = 1.5,
+  borderColour = "black",
+
+  gridlines.major = FALSE,
+  gridlines.minor = FALSE,
+
+  title = "Control versus GDM",
+  subtitle = NULL,
+
+  legendLabels = c(
+    "NS",
+    expression(Log[2]~FC),
+    "Adjusted P",
+    expression("Adjusted P and"~Log[2]~FC)
+  ),
+
+  pointSize = 2,
+  labSize = 3.5,
+  max.overlaps = 20
+)
+
+ggplot2::ggsave(
+  filename = file.path(
+    path_fig_255,
+    "GSE255075_volcano_manuscript.png"
+  ),
+  plot = p_volcano_manuscript_255,
+  width = 6.7,
+  height = 6.7,
+  units = "in",
+  dpi = dpi_out,
+  bg = "white"
+)
