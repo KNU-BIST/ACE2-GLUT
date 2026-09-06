@@ -8,6 +8,10 @@
 # Placental ACE2 and glucose transporter expression in gestational diabetes
 # mellitus
 #
+# Author
+# ------
+# Md. Masudul Haque
+#
 # Purpose
 # -------
 # Reproduce pathway-level analyses derived from the GSE255075 DESeq2 results,
